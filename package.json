@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "@pinia/nuxt": "^0.5.5",
+    "@vueuse/nuxt": "^10.11.1",
+    "axios": "^1.7.9",
+    "pinia": "^2.3.1",
+    "vue-toastification": "^2.0.0-rc.5"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.13.1",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "autoprefixer": "^10.4.20",
+    "nuxt": "^3.8.2",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17"
+  },
+  "name": "sourcecode-wamarketing-dashboard",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nuxt",
+    "build": "nuxt build"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

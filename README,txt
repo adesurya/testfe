@@ -1,0 +1,30 @@
+Development
+npm install
+npm run dev
+
+Production build:
+npm run build
+
+Deploy Using PM2
+npm run build
+pm2 start .output/server/index.mjs --name whatsapp-dashboard
+
+Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+COPY . .
+RUN npm install
+RUN npm run build
+
+ENV NUXT_HOST=0.0.0.0
+ENV NUXT_PORT=3000
+
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]
+
+
+
+npx nuxi init whatsapp-dashboard
+cd whatsapp-dashboard
+npm install @pinia/nuxt @nuxtjs/tailwindcss @vueuse/nuxt axios pinia vue-toastification@next
