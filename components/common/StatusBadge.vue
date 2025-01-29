@@ -1,77 +1,93 @@
 <template>
-    <span
-      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-      :class="statusClasses"
-    >
-      <component
-        :is="statusIcon"
-        v-if="showIcon"
-        class="-ml-0.5 mr-1.5 h-2 w-2"
-      />
-      {{ status }}
-    </span>
-  </template>
-  
-  <script setup lang="ts">
-  import {
-    CheckCircleIcon,
-    XCircleIcon,
-    ClockIcon,
-    ExclamationTriangleIcon
-  } from '@heroicons/vue/24/solid'
-  
-  const props = defineProps<{
-    status: string
-    showIcon?: boolean
-  }>()
-  
-  const statusClasses = computed(() => {
-    const classes = {
-      success: 'bg-green-100 text-green-800',
-      error: 'bg-red-100 text-red-800',
-      warning: 'bg-yellow-100 text-yellow-800',
-      pending: 'bg-gray-100 text-gray-800',
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      processing: 'bg-blue-100 text-blue-800'
-    }
-  
-    const statusMap = {
-      completed: 'success',
-      failed: 'error',
-      pending: 'pending',
-      active: 'active',
-      inactive: 'inactive',
-      processing: 'processing',
-      warning: 'warning'
-    }
-  
-    const mappedStatus = statusMap[props.status.toLowerCase()] || 'pending'
-    return classes[mappedStatus]
-  })
-  
-  const statusIcon = computed(() => {
-    const icons = {
-      success: CheckCircleIcon,
-      error: XCircleIcon,
-      warning: ExclamationTriangleIcon,
-      pending: ClockIcon,
-      active: CheckCircleIcon,
-      inactive: XCircleIcon,
-      processing: ClockIcon
-    }
-  
-    const statusMap = {
-      completed: 'success',
-      failed: 'error',
-      pending: 'pending',
-      active: 'active',
-      inactive: 'inactive',
-      processing: 'processing',
-      warning: 'warning'
-    }
-  
-    const mappedStatus = statusMap[props.status.toLowerCase()] || 'pending'
-    return icons[mappedStatus]
-  })
-  </script>
+  <span
+    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+    :class="statusClasses"
+  >
+    <component 
+      :is="statusIcon" 
+      v-if="showIcon"
+      class="-ml-0.5 mr-1.5 h-2 w-2" 
+      :class="iconClasses"
+    />
+    {{ formattedStatus }}
+  </span>
+</template>
+
+<script setup lang="ts">
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  ExclamationCircleIcon
+} from '@heroicons/vue/24/solid'
+
+const props = defineProps<{
+  status: string
+  showIcon?: boolean
+}>()
+
+const statusConfig = {
+  active: {
+    color: 'green',
+    icon: CheckCircleIcon,
+    label: 'Active'
+  },
+  inactive: {
+    color: 'gray',
+    icon: XCircleIcon,
+    label: 'Inactive'
+  },
+  pending: {
+    color: 'yellow',
+    icon: ClockIcon,
+    label: 'Pending'
+  },
+  failed: {
+    color: 'red',
+    icon: XCircleIcon,
+    label: 'Failed'
+  },
+  warning: {
+    color: 'yellow',
+    icon: ExclamationCircleIcon,
+    label: 'Warning'
+  },
+  completed: {
+    color: 'green',
+    icon: CheckCircleIcon,
+    label: 'Completed'
+  },
+  processing: {
+    color: 'blue',
+    icon: ClockIcon,
+    label: 'Processing'
+  },
+  expired: {
+    color: 'red',
+    icon: XCircleIcon,
+    label: 'Expired'
+  },
+  cancelled: {
+    color: 'gray',
+    icon: XCircleIcon,
+    label: 'Cancelled'
+  }
+}
+
+const currentStatus = computed(() => {
+  const status = props.status.toLowerCase()
+  return statusConfig[status] || statusConfig.pending
+})
+
+const statusClasses = computed(() => ({
+  [`bg-${currentStatus.value.color}-100 text-${currentStatus.value.color}-800`]: true
+}))
+
+const iconClasses = computed(() => ({
+  [`text-${currentStatus.value.color}-400`]: true
+}))
+
+const formattedStatus = computed(() => {
+  return currentStatus.value.label
+})
+</script>

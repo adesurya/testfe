@@ -1,13 +1,20 @@
-Development
+# Copy .env.example ke .env dan sesuaikan konfigurasi
+cp .env.example .env
+
+# Install dependencies
 npm install
+
+# Jalankan development server
 npm run dev
 
-Production build:
+# Build aplikasi
 npm run build
 
-Deploy Using PM2
-npm run build
-pm2 start .output/server/index.mjs --name whatsapp-dashboard
+# Jalankan dengan Node.js
+npm run start
+
+# Atau jalankan dengan PM2
+npm run start:pm2
 
 Dockerfile
 FROM node:18-alpine

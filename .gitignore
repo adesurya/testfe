@@ -1,1 +1,33 @@
-node_modules/
+# Dependencies
+node_modules
+package-lock.json
+
+# Nuxt
+.nuxt
+.nitro
+.cache
+dist
+.output
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# IDE
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db

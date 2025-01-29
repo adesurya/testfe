@@ -1,12 +1,17 @@
 export default defineNuxtRouteMiddleware((to, from) => {
   const authStore = useAuthStore()
-  const publicPages = ['/login', '/register']
-
-  if (!authStore.isAuthenticated && !publicPages.includes(to.path)) {
-    return navigateTo('/login')
+  
+  // Cek apakah user sudah login
+  if (!authStore.isAuthenticated && to.path !== '/login') {
+    return navigateTo('/login', { 
+      query: { 
+        redirect: to.fullPath 
+      }
+    })
   }
 
-  if (authStore.isAuthenticated && publicPages.includes(to.path)) {
+  // Jika sudah login dan mencoba akses login page, redirect ke dashboard
+  if (authStore.isAuthenticated && to.path === '/login') {
     return navigateTo('/dashboard')
   }
 })

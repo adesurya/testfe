@@ -4,112 +4,97 @@ interface User {
   id: number
   username: string
   email: string
-  role: 'admin' | 'user'
-  status: 'active' | 'inactive'
+  role: string
 }
 
 interface AuthState {
   user: User | null
   token: string | null
-  loading: boolean
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
-    token: null,
-    loading: false
+    token: null
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.token,
-    isAdmin: (state) => state.user?.role === 'admin',
-    isActive: (state) => state.user?.status === 'active'
+    isAdmin: (state) => state.user?.role === 'admin'
   },
 
   actions: {
     async login(credentials: { username: string; password: string }) {
       try {
-        this.loading = true
-        const { api } = useApi()
-        const response = await api('/api/auth/login', {
-          method: 'POST',
-          body: credentials
-        })
+        // Simulasi API call untuk testing
+        console.log('Login credentials:', credentials)
         
+        // Simulasi response
+        const response = {
+          data: {
+            token: 'dummy_token',
+            user: {
+              id: 1,
+              username: credentials.username,
+              email: `${credentials.username}@example.com`,
+              role: 'user'
+            }
+          }
+        }
+
         this.token = response.data.token
         this.user = response.data.user
-        localStorage.setItem('token', response.data.token)
-        
-        return response.data
-      } catch (error) {
-        console.error('Login error:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
 
-    async register(userData: { username: string; email: string; password: string }) {
-      try {
-        this.loading = true
-        const { api } = useApi()
-        const response = await api('/api/auth/register', {
-          method: 'POST',
-          body: userData
+        // Gunakan cookie untuk menyimpan token
+        const cookie = useCookie('auth_token', {
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          path: '/'
         })
+        cookie.value = response.data.token
+
         return response.data
-      } catch (error) {
-        console.error('Registration error:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async loginWithGoogle(idToken: string) {
-      try {
-        this.loading = true
-        const { api } = useApi()
-        const response = await api('/api/auth/google', {
-          method: 'POST',
-          body: { idToken }
-        })
-        
-        this.token = response.data.token
-        this.user = response.data.user
-        localStorage.setItem('token', response.data.token)
-        
-        return response.data
-      } catch (error) {
-        console.error('Google login error:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async checkAuth() {
-      try {
-        const token = localStorage.getItem('token')
-        if (!token) return false
-
-        this.token = token
-        const { authApi } = useApi()
-        const response = await authApi('/api/auth/me')
-        this.user = response.data
-        return true
-      } catch (error) {
-        this.logout()
-        return false
+      } catch (error: any) {
+        throw new Error(error.message || 'Login failed')
       }
     },
 
     logout() {
       this.user = null
       this.token = null
-      localStorage.removeItem('token')
+      
+      // Hapus cookie
+      const cookie = useCookie('auth_token')
+      cookie.value = null
+      
+      // Redirect ke login
       navigateTo('/login')
+    },
+
+    async checkAuth() {
+      const cookie = useCookie('auth_token')
+      if (!cookie.value) {
+        this.user = null
+        this.token = null
+        return false
+      }
+
+      // Jika ada token di cookie, set state
+      if (!this.token) {
+        this.token = cookie.value
+        // Simulasi user data
+        this.user = {
+          id: 1,
+          username: 'user',
+          email: 'user@example.com',
+          role: 'user'
+        }
+      }
+
+      return true
     }
+  },
+
+  persist: {
+    key: 'auth-state'
   }
 })
