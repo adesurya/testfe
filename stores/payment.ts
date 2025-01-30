@@ -1,85 +1,44 @@
+// stores/payment.ts
 import { defineStore } from 'pinia'
 
-interface PaymentMethod {
-  id: string
-  name: string
-  type: string
-  icon: string
-}
-
-interface Payment {
-  id: number
-  amount: number
-  status: 'pending' | 'completed' | 'failed'
-  paymentMethod: string
-  transactionId: string
-  createdAt: string
+interface PaymentState {
+  currentPayment: any
+  paymentStatus: string | null
+  error: string | null
 }
 
 export const usePaymentStore = defineStore('payment', {
-  state: () => ({
-    availableMethods: [] as PaymentMethod[],
-    payments: [] as Payment[],
-    loading: false
+  state: (): PaymentState => ({
+    currentPayment: null,
+    paymentStatus: null,
+    error: null
   }),
 
   actions: {
-    async fetchPaymentMethods(planId: number) {
-      try {
-        this.loading = true
-        const { authApi } = useApi()
-        const response = await authApi(`/api/payments/methods/${planId}`)
-        this.availableMethods = response.data
-        return response.data
-      } catch (error) {
-        console.error('Error fetching payment methods:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async createPayment(paymentData: {
-      planId: number
-      paymentMethod: string
-      amount: number
-    }) {
-      try {
-        this.loading = true
-        const { authApi } = useApi()
-        const response = await authApi('/api/payments/create', {
-          method: 'POST',
-          body: paymentData
-        })
-        return response.data
-      } catch (error) {
-        console.error('Error creating payment:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
     async checkPaymentStatus(merchantOrderId: string) {
-      const { authApi } = useApi()
-      const response = await authApi(`/api/payments/status/${merchantOrderId}`)
-      return response.data
+      try {
+        const { authApi } = useApi()
+        const response = await authApi(`/api/payments/status/${merchantOrderId}`)
+        
+        this.paymentStatus = response.status
+        return response
+      } catch (error) {
+        console.error('Error checking payment status:', error)
+        throw error
+      }
     },
 
-    async fetchPaymentHistory(params = {}) {
+    async processCallback(callbackData: any) {
       try {
-        this.loading = true
         const { authApi } = useApi()
-        const response = await authApi('/api/payments/history', {
-          params
+        const response = await authApi('/api/payments/callback', {
+          method: 'POST',
+          body: callbackData
         })
-        this.payments = response.data
-        return response.data
+        return response
       } catch (error) {
-        console.error('Error fetching payment history:', error)
+        console.error('Error processing callback:', error)
         throw error
-      } finally {
-        this.loading = false
       }
     }
   }

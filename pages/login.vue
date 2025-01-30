@@ -5,9 +5,9 @@
         Sign in to your account
       </h2>
       <p class="mt-2 text-center text-sm text-gray-600">
-        Or
-        <NuxtLink to="/register" class="font-medium text-primary-600 hover:text-primary-500">
-          create a new account
+        Don't have an account?
+        <NuxtLink to="/register" class="font-medium text-green-600 hover:text-green-500">
+          Register here
         </NuxtLink>
       </p>
     </div>
@@ -15,7 +15,10 @@
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
         <form @submit.prevent="handleLogin" class="space-y-6">
-          <!-- Username Input -->
+          <div v-if="error" class="bg-red-50 p-4 rounded-md">
+            <p class="text-sm text-red-700">{{ error }}</p>
+          </div>
+
           <div>
             <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
             <div class="mt-1">
@@ -29,7 +32,6 @@
             </div>
           </div>
 
-          <!-- Password Input -->
           <div>
             <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
             <div class="mt-1">
@@ -40,19 +42,6 @@
                 required
                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
               />
-            </div>
-          </div>
-
-          <!-- Remember Me -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <input
-                id="remember"
-                v-model="form.remember"
-                type="checkbox"
-                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label for="remember" class="ml-2 block text-sm text-gray-900">Remember me</label>
             </div>
           </div>
 
@@ -78,25 +67,32 @@ const authStore = useAuthStore()
 
 const form = ref({
   username: '',
-  password: '',
-  remember: false
+  password: ''
 })
 
 const loading = ref(false)
+const error = ref('')
 
 async function handleLogin() {
   try {
+    error.value = ''
     loading.value = true
-    await authStore.login({
+    
+    const result = await authStore.login({
       username: form.value.username,
       password: form.value.password
     })
-    
-    // Redirect ke dashboard atau halaman yang diminta
-    const redirectPath = route.query.redirect?.toString() || '/dashboard'
-    await navigateTo(redirectPath)
-  } catch (error) {
-    console.error('Login error:', error)
+
+    if (result && result.token) {
+      // Redirect ke dashboard atau halaman yang diminta
+      const redirectPath = route.query.redirect?.toString() || '/dashboard'
+      await navigateTo(redirectPath)
+    } else {
+      throw new Error('Login failed - Invalid response')
+    }
+  } catch (err) {
+    console.error('Login error:', err)
+    error.value = err.message || 'Failed to login. Please check your credentials.'
   } finally {
     loading.value = false
   }

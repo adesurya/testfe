@@ -2,6 +2,7 @@ import axios from 'axios'
 
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
+  const authStore = useAuthStore()
 
   const axiosInstance = axios.create({
     baseURL: config.public.apiBase,
@@ -10,9 +11,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   axiosInstance.interceptors.request.use(
     (config) => {
-      const authStore = useAuthStore()
-      if (authStore.token) {
-        config.headers.Authorization = `Bearer ${authStore.token}`
+      const token = authStore.token
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
       }
       return config
     },
@@ -25,9 +26,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
-        const authStore = useAuthStore()
         authStore.logout()
-        navigateTo('/login')
       }
       return Promise.reject(error)
     }

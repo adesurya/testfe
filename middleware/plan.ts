@@ -1,31 +1,25 @@
-import { useUserStore } from '~/stores/user'
+// middleware/plan.ts
+export default defineNuxtRouteMiddleware(async (to, from) => {
+  // Skip for login, register and plans pages
+  if (['/login', '/register', '/plans', '/payments/status', '/payments/callback'].includes(to.path)) {
+    return
+  }
 
-export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = useAuthStore()
-  const userStore = useUserStore()
+  const planStore = usePlanStore()
 
-  // Skip plan check for admin users
+  // Skip for admin
   if (authStore.isAdmin) {
     return
   }
 
-  // Skip plan check for plan-related routes
-  const planRoutes = ['/plans', '/plans/purchase', '/plans/payment']
-  if (planRoutes.includes(to.path)) {
-    return
-  }
-
   try {
-    // Check if user has an active plan
-    const currentPlan = await userStore.fetchCurrentPlan()
-    
-    if (!currentPlan || currentPlan.status !== 'active') {
-      return navigateTo('/plans?redirect=' + to.fullPath)
-    }
+    const { authApi } = useApi()
+    const response = await authApi(`/api/plans/user/${authStore.user?.id}`)
+    const activePlan = response.find(plan => plan.status === 'active')
 
-    // Check if user has exceeded message limit
-    if (currentPlan.messagesRemaining <= 0) {
-      return navigateTo('/plans/upgrade?reason=limit-exceeded')
+    if (!activePlan) {
+      return navigateTo('/plans')
     }
   } catch (error) {
     console.error('Error checking plan:', error)

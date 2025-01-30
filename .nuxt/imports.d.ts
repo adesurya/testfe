@@ -48,6 +48,7 @@ export { useAuthStore } from '../stores/auth';
 export { useBulkMessageStore } from '../stores/bulkMessage';
 export { useMessageStore } from '../stores/message';
 export { usePaymentStore } from '../stores/payment';
+export { usePlanStore } from '../stores/plan';
 export { useUserStore } from '../stores/user';
 export { useColorMode } from '../node_modules/@nuxtjs/color-mode/dist/runtime/composables';
 export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/@pinia/nuxt/dist/runtime/composables';

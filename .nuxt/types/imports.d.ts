@@ -295,6 +295,7 @@ declare global {
   const usePerformanceObserver: typeof import('../../node_modules/@vueuse/core')['usePerformanceObserver']
   const usePermission: typeof import('../../node_modules/@vueuse/core')['usePermission']
   const usePinia: typeof import('../../node_modules/@pinia/nuxt/dist/runtime/composables')['usePinia']
+  const usePlanStore: typeof import('../../stores/plan')['usePlanStore']
   const usePointer: typeof import('../../node_modules/@vueuse/core')['usePointer']
   const usePointerLock: typeof import('../../node_modules/@vueuse/core')['usePointerLock']
   const usePointerSwipe: typeof import('../../node_modules/@vueuse/core')['usePointerSwipe']
@@ -737,6 +738,7 @@ declare module 'vue' {
     readonly usePerformanceObserver: UnwrapRef<typeof import('../../node_modules/@vueuse/core')['usePerformanceObserver']>
     readonly usePermission: UnwrapRef<typeof import('../../node_modules/@vueuse/core')['usePermission']>
     readonly usePinia: UnwrapRef<typeof import('../../node_modules/@pinia/nuxt/dist/runtime/composables')['usePinia']>
+    readonly usePlanStore: UnwrapRef<typeof import('../../stores/plan')['usePlanStore']>
     readonly usePointer: UnwrapRef<typeof import('../../node_modules/@vueuse/core')['usePointer']>
     readonly usePointerLock: UnwrapRef<typeof import('../../node_modules/@vueuse/core')['usePointerLock']>
     readonly usePointerSwipe: UnwrapRef<typeof import('../../node_modules/@vueuse/core')['usePointerSwipe']>

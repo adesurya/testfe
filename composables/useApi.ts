@@ -1,3 +1,4 @@
+// composables/useApi.ts
 import { UseFetchOptions } from '#app'
 
 export function useApi() {
@@ -6,43 +7,36 @@ export function useApi() {
 
   const baseURL = config.public.apiBase
 
-  // Common headers for all requests
-  const headers = computed(() => ({
-    'Content-Type': 'application/json',
-    ...(authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {})
-  }))
+  const api = async (endpoint: string, options: UseFetchOptions<any> = {}) => {
+    try {
+      const response = await $fetch(endpoint, {
+        baseURL,
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      })
 
-  // Base fetch options
-  const baseOptions: UseFetchOptions<any> = {
-    baseURL,
-    headers: headers.value,
-    onResponseError({ response }) {
-      if (response.status === 401) {
-        authStore.logout()
-        navigateTo('/login')
-      }
+      return response
+    } catch (error) {
+      console.error('API Error:', error)
+      throw error
     }
   }
 
-  // Regular API calls
-  const api = async (endpoint: string, options: UseFetchOptions<any> = {}) => {
-    return await useFetch(endpoint, {
-      ...baseOptions,
-      ...options,
-      headers: {
-        ...baseOptions.headers,
-        ...options.headers
-      }
-    })
-  }
-
-  // Authenticated API calls
   const authApi = async (endpoint: string, options: UseFetchOptions<any> = {}) => {
     if (!authStore.token) {
       throw new Error('No authentication token')
     }
 
-    return await api(endpoint, options)
+    return api(endpoint, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${authStore.token}`
+      }
+    })
   }
 
   return {

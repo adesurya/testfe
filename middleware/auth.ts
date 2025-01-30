@@ -1,17 +1,29 @@
+// middleware/auth.ts
 export default defineNuxtRouteMiddleware((to, from) => {
   const authStore = useAuthStore()
   
-  // Cek apakah user sudah login
-  if (!authStore.isAuthenticated && to.path !== '/login') {
+    // Allow payment return and callback URLs without auth
+    if (to.path.startsWith('/payments/return') || to.path.startsWith('/payments/callback')) {
+      return
+    }
+    
+  // Public routes
+  if (['/login', '/register'].includes(to.path)) {
+    if (authStore.isAuthenticated) {
+      return navigateTo('/dashboard')
+    }
+    return
+  }
+
+  // Protected routes
+  if (!authStore.isAuthenticated) {
     return navigateTo('/login', { 
-      query: { 
-        redirect: to.fullPath 
-      }
+      query: { redirect: to.fullPath }
     })
   }
 
-  // Jika sudah login dan mencoba akses login page, redirect ke dashboard
-  if (authStore.isAuthenticated && to.path === '/login') {
+  // Admin routes
+  if (to.path.startsWith('/admin') && !authStore.isAdmin) {
     return navigateTo('/dashboard')
   }
 })

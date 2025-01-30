@@ -1,3 +1,4 @@
+// stores/auth.ts
 import { defineStore } from 'pinia'
 
 interface User {
@@ -26,35 +27,49 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(credentials: { username: string; password: string }) {
       try {
-        // Simulasi API call untuk testing
-        console.log('Login credentials:', credentials)
-        
-        // Simulasi response
-        const response = {
-          data: {
-            token: 'dummy_token',
-            user: {
-              id: 1,
-              username: credentials.username,
-              email: `${credentials.username}@example.com`,
-              role: 'user'
-            }
-          }
+        const { api } = useApi()
+        const response = await api('/api/auth/login', {
+          method: 'POST',
+          body: credentials
+        })
+
+        if (!response.token || !response.user) {
+          throw new Error('Invalid response from server')
         }
 
-        this.token = response.data.token
-        this.user = response.data.user
+        // Set token dan user data
+        this.token = response.token
+        this.user = response.user
 
-        // Gunakan cookie untuk menyimpan token
+        // Simpan token di cookie
         const cookie = useCookie('auth_token', {
-          maxAge: 60 * 60 * 24 * 7, // 7 days
+          maxAge: 60 * 60 * 24 * 7,
           path: '/'
         })
-        cookie.value = response.data.token
+        cookie.value = response.token
 
-        return response.data
-      } catch (error: any) {
-        throw new Error(error.message || 'Login failed')
+        return response
+      } catch (error) {
+        console.error('Login error:', error)
+        throw error
+      }
+    },
+
+    async checkAuth() {
+      try {
+        const cookie = useCookie('auth_token')
+        if (!cookie.value || !this.user) {
+          this.logout()
+          return false
+        }
+
+        // Hanya update token jika sudah ada user data
+        this.token = cookie.value
+        return true
+      } catch (error) {
+        console.error('Auth check error:', error)
+        this.logout()
+        return false
       }
     },
 
@@ -62,39 +77,31 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.token = null
       
-      // Hapus cookie
       const cookie = useCookie('auth_token')
       cookie.value = null
       
-      // Redirect ke login
       navigateTo('/login')
     },
 
-    async checkAuth() {
-      const cookie = useCookie('auth_token')
-      if (!cookie.value) {
-        this.user = null
-        this.token = null
-        return false
+    // Function untuk register
+    async register(data: { 
+      username: string
+      email: string
+      password: string 
+    }) {
+      try {
+        const { api } = useApi()
+        const response = await api('/api/auth/register', {
+          method: 'POST',
+          body: data
+        })
+        return response
+      } catch (error) {
+        console.error('Register error:', error)
+        throw error
       }
-
-      // Jika ada token di cookie, set state
-      if (!this.token) {
-        this.token = cookie.value
-        // Simulasi user data
-        this.user = {
-          id: 1,
-          username: 'user',
-          email: 'user@example.com',
-          role: 'user'
-        }
-      }
-
-      return true
     }
   },
 
-  persist: {
-    key: 'auth-state'
-  }
+  persist: true
 })
