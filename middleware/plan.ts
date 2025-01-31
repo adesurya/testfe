@@ -1,12 +1,11 @@
-// middleware/plan.ts
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  // Skip for login, register and plans pages
-  if (['/login', '/register', '/plans', '/payments/status', '/payments/callback'].includes(to.path)) {
+  // Skip for login, register, plans pages and payment routes
+  if (['/login', '/register', '/plans'].includes(to.path) || 
+      to.path.startsWith('/payments/')) {
     return
   }
 
   const authStore = useAuthStore()
-  const planStore = usePlanStore()
 
   // Skip for admin
   if (authStore.isAdmin) {
@@ -16,7 +15,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   try {
     const { authApi } = useApi()
     const response = await authApi(`/api/plans/user/${authStore.user?.id}`)
-    const activePlan = response.find(plan => plan.status === 'active')
+
+    // Pastikan kita mengakses data dengan benar dari response
+    const plans = response.data || response
+    
+    // Cari plan yang aktif
+    const activePlan = Array.isArray(plans) ? 
+      plans.find(plan => plan.status === 'active') : null
 
     if (!activePlan) {
       return navigateTo('/plans')

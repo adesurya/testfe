@@ -198,6 +198,8 @@ declare module 'nuxt/schema' {
 
    appName: string,
 
+   appUrl: string,
+
    persistedState: {
       storage: string,
 

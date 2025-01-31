@@ -1,4 +1,3 @@
-// stores/payment.ts
 import { defineStore } from 'pinia'
 
 interface PaymentState {
@@ -15,6 +14,32 @@ export const usePaymentStore = defineStore('payment', {
   }),
 
   actions: {
+    async createPayment(data: any) {
+      try {
+        const { authApi } = useApi()
+        const config = useRuntimeConfig()
+        
+        // Get base URL from config
+        const baseUrl = config.public.appUrl || window.location.origin
+
+        // Create payment with correct return & callback URLs
+        const response = await authApi('/api/payments/create', {
+          method: 'POST',
+          body: {
+            ...data,
+            returnUrl: `${baseUrl}/payments/return`, // Corrected return URL
+            callbackUrl: `${baseUrl}/api/payments/callback` // API endpoint for callback
+          }
+        })
+
+        this.currentPayment = response.data
+        return response.data
+      } catch (error) {
+        console.error('Error creating payment:', error)
+        throw error
+      }
+    },
+
     async checkPaymentStatus(merchantOrderId: string) {
       try {
         const { authApi } = useApi()

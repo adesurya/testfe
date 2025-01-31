@@ -1,12 +1,13 @@
-// middleware/auth.ts
 export default defineNuxtRouteMiddleware((to, from) => {
   const authStore = useAuthStore()
   
-    // Allow payment return and callback URLs without auth
-    if (to.path.startsWith('/payments/return') || to.path.startsWith('/payments/callback')) {
-      return
-    }
-    
+  // Allow payment return and callback URLs without auth
+  if (to.path.startsWith('/payments/return') || 
+      to.path.startsWith('/payments/callback') ||
+      to.path.startsWith('/payments/status')) {
+    return
+  }
+  
   // Public routes
   if (['/login', '/register'].includes(to.path)) {
     if (authStore.isAuthenticated) {
