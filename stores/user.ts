@@ -19,39 +19,66 @@ interface UserStats {
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    currentPlan: null as Plan | null,
-    stats: null as UserStats | null,
-    loading: false
+    sessions: [],
+    loading: false,
+    error: null
   }),
 
   actions: {
-    async fetchCurrentPlan() {
+    async fetchUserPlan(userId: string) {
       try {
-        this.loading = true
         const { authApi } = useApi()
-        const response = await authApi('/api/plans/user/current')
-        this.currentPlan = response.data
-        return response.data
+        const response = await authApi(`/api/plans/user/${userId}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+        return response.data || response
       } catch (error) {
-        console.error('Error fetching current plan:', error)
+        console.error('Error fetching user plan:', error)
+        throw error
+      }
+    },
+
+    async fetchUserSessions(userId: string) {
+      try {
+        this.loading = true;
+        const { authApi } = useApi()
+        const response = await authApi(`/api/whatsapp/sessions/${userId}`)
+        // Pastikan kita mengambil data dari response dengan benar
+        this.sessions = response || []
+        return this.sessions
+      } catch (error) {
+        console.error('Error fetching sessions:', error)
         throw error
       } finally {
         this.loading = false
       }
     },
 
+    async fetchMessageHistory(userId: string) {
+      try {
+        const { authApi } = useApi()
+        const response = await authApi(`/api/messages/history/${userId}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+        return response.data || response
+      } catch (error) {
+        console.error('Error fetching message history:', error)
+        throw error
+      }
+    },
+
     async fetchStats() {
       try {
-        this.loading = true
         const { authApi } = useApi()
         const response = await authApi('/api/user/stats')
-        this.stats = response.data
-        return response.data
+        return response.data || response
       } catch (error) {
         console.error('Error fetching user stats:', error)
         throw error
-      } finally {
-        this.loading = false
       }
     },
 

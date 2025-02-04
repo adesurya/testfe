@@ -1,7 +1,9 @@
 // nuxt.config.ts
 export default defineNuxtConfig({
   devtools: { enabled: true },
-
+  router: {
+    middleware: ['auth'] // Middleware auth akan dijalankan untuk semua route
+  },
   modules: [
     '@nuxt/ui',
     '@pinia/nuxt',
@@ -26,12 +28,14 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'WhatsApp Dashboard',
+      layoutTransition: { name: 'layout', mode: 'out-in' },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' }
       ]
     }
   },
+
 
   routeRules: {
     '/payments/callback': { ssr: false },

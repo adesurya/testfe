@@ -1,252 +1,176 @@
+<!-- pages/dashboard/sessions/bind.vue -->
 <template>
-    <div class="space-y-6">
-      <PageHeader 
-        title="Bind WhatsApp Session" 
-        subtitle="Connect your WhatsApp account"
-      />
-  
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- QR Code Section -->
-        <div class="bg-white shadow rounded-lg p-6">
-          <div v-if="!session.bound">
-            <div class="text-center">
-              <h3 class="text-lg font-medium text-gray-900">
-                Scan QR Code
-              </h3>
-              <p class="mt-2 text-sm text-gray-500">
-              Open WhatsApp on your phone and scan this QR code
-            </p>
-          </div>
+  <div class="space-y-6">
+    <PageHeader 
+      title="Connect WhatsApp" 
+      subtitle="Bind new WhatsApp session"
+    />
 
-          <div class="mt-6">
-            <div v-if="qrCode" class="flex justify-center">
-              <img 
-                :src="qrCode" 
-                alt="WhatsApp QR Code"
-                class="h-64 w-64"
-              >
-            </div>
-            <div v-else-if="loading" class="py-12">
-              <LoadingSpinner text="Generating QR Code..." />
-            </div>
-            <div v-else class="text-center py-12">
-              <XCircleIcon class="mx-auto h-12 w-12 text-red-500" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900">
-                Failed to generate QR code
-              </h3>
-              <p class="mt-1 text-sm text-gray-500">
-                Please try again or contact support if the problem persists.
-              </p>
-              <div class="mt-6">
-                <button
-                  @click="generateQR"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-                >
-                  Try Again
-                </button>
+    <div class="bg-white shadow rounded-lg">
+      <div class="p-6">
+        <!-- Phone Number Input -->
+        <div class="max-w-md mx-auto">
+          <form @submit.prevent="bindSession" class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">
+                Phone Number
+              </label>
+              <div class="mt-1 flex rounded-md shadow-sm">
+                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
+                  +62
+                </span>
+                <input
+                  v-model="phoneNumber"
+                  type="text"
+                  required
+                  placeholder="8123456789"
+                  class="flex-1 block w-full rounded-none rounded-r-md border-gray-300 focus:border-green-500 focus:ring-green-500"
+                />
               </div>
             </div>
-          </div>
-        </div>
 
-        <div v-else class="text-center py-12">
-          <CheckCircleIcon class="mx-auto h-12 w-12 text-green-500" />
-          <h3 class="mt-2 text-lg font-medium text-gray-900">
-            Successfully Connected
-          </h3>
-          <p class="mt-2 text-sm text-gray-500">
-            Your WhatsApp account is now connected to the platform.
-          </p>
-          <div class="mt-6">
             <button
-              @click="goToDashboard"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+              type="submit"
+              :disabled="loading"
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
-              Go to Dashboard
+              {{ loading ? 'Generating QR Code...' : 'Generate QR Code' }}
             </button>
+          </form>
+        </div>
+
+        <!-- QR Code Display -->
+        <div v-if="qrCode" class="mt-8">
+          <div class="max-w-xs mx-auto">
+            <!-- Tampilkan ukuran default jika QR code ada -->
+            <img 
+                :src="qrCode" 
+                alt="WhatsApp QR Code" 
+                class="w-64 h-64 mx-auto border p-2 rounded-lg"
+                @error="(e) => { 
+                  console.error('Image loading error:', e); 
+                  error = 'Failed to load QR Code image'
+                }"
+              >
+            <p class="mt-4 text-sm text-gray-500 text-center">
+              Scan this QR Code with your WhatsApp app to connect
+            </p>
           </div>
         </div>
-      </div>
 
-      <!-- Instructions -->
-      <div class="space-y-6">
-        <div class="bg-white shadow rounded-lg p-6">
+        <!-- Error Message -->
+        <div v-if="error" class="mt-4 p-4 bg-red-50 rounded-md">
+          <p class="text-sm text-red-600">{{ error }}</p>
+        </div>
+
+        <div class="mt-4 sm:mt-0">
+        <NuxtLink
+          to="/dashboard/"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"        >
+            <PlusIcon class="h-5 w-5 mr-2" />
+            Back to Dashboard
+          </NuxtLink>
+        </div>
+
+
+        <!-- Instructions -->
+        <div class="mt-8 border-t pt-6">
           <h3 class="text-lg font-medium text-gray-900">Instructions</h3>
           <ol class="mt-4 space-y-4 text-sm text-gray-500">
-            <li class="flex items-start">
-              <span class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">
-                1
-              </span>
-              <p class="ml-3">Open WhatsApp on your phone</p>
+            <li class="flex gap-3">
+              <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">1</span>
+              <span>Open WhatsApp on your phone</span>
             </li>
-            <li class="flex items-start">
-              <span class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">
-                2
-              </span>
-              <p class="ml-3">Tap Menu (three dots) and select WhatsApp Web</p>
+            <li class="flex gap-3">
+              <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">2</span>
+              <span>Tap Menu or Settings and select WhatsApp Web</span>
             </li>
-            <li class="flex items-start">
-              <span class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">
-                3
-              </span>
-              <p class="ml-3">Point your phone camera to the QR code</p>
-            </li>
-            <li class="flex items-start">
-              <span class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">
-                4
-              </span>
-              <p class="ml-3">Keep your phone connected to the internet</p>
+            <li class="flex gap-3">
+              <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-green-100 text-green-600 font-medium">3</span>
+              <span>Point your phone to this screen to scan the QR code</span>
             </li>
           </ol>
         </div>
-
-        <div class="bg-white shadow rounded-lg p-6">
-          <h3 class="text-lg font-medium text-gray-900">Important Notes</h3>
-          <ul class="mt-4 space-y-2 text-sm text-gray-500">
-            <li class="flex items-start">
-              <InformationCircleIcon class="h-5 w-5 text-blue-500 mr-2" />
-              Make sure your phone has a stable internet connection
-            </li>
-            <li class="flex items-start">
-              <InformationCircleIcon class="h-5 w-5 text-blue-500 mr-2" />
-              You can only connect one WhatsApp account per session
-            </li>
-            <li class="flex items-start">
-              <InformationCircleIcon class="h-5 w-5 text-blue-500 mr-2" />
-              The QR code expires after 45 seconds
-            </li>
-          </ul>
-        </div>
-
-        <div class="bg-gray-50 rounded-lg p-4">
-          <h4 class="text-sm font-medium text-gray-900">Need Help?</h4>
-          <p class="mt-1 text-sm text-gray-500">
-            If you're having trouble connecting your WhatsApp account, please
-            <button 
-              @click="showSupportInfo = true"
-              class="text-green-600 hover:text-green-500"
-            >
-              contact our support team
-            </button>.
-          </p>
-        </div>
       </div>
     </div>
-
-    <!-- Support Modal -->
-    <Modal 
-      v-if="showSupportInfo"
-      title="Contact Support"
-      @close="showSupportInfo = false"
-    >
-      <div class="p-6">
-        <p class="text-sm text-gray-500">
-          Our support team is available to help you with any issues:
-        </p>
-        <ul class="mt-4 space-y-2">
-          <li class="flex items-center">
-            <EnvelopeIcon class="h-5 w-5 text-gray-400 mr-2" />
-            <span class="text-sm text-gray-900">support@example.com</span>
-          </li>
-          <li class="flex items-center">
-            <PhoneIcon class="h-5 w-5 text-gray-400 mr-2" />
-            <span class="text-sm text-gray-900">+1 234 567 890</span>
-          </li>
-        </ul>
-        <div class="mt-6">
-          <button
-            @click="showSupportInfo = false"
-            class="w-full inline-flex justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </Modal>
   </div>
 </template>
 
-<script setup lang="ts">
-import { 
-  CheckCircleIcon, 
-  XCircleIcon,
-  InformationCircleIcon,
-  EnvelopeIcon,
-  PhoneIcon
-} from '@heroicons/vue/24/outline'
+<script setup>
+import { ref } from 'vue'
 
-definePageMeta({
-  middleware: ['auth', 'plan']
-})
-
+const authStore = useAuthStore()
+const { authApi } = useApi()
 const router = useRouter()
 
+const phoneNumber = ref('')
 const qrCode = ref('')
 const loading = ref(false)
-const showSupportInfo = ref(false)
-const session = ref({
-  bound: false,
-  status: 'pending'
-})
+const error = ref('')
 
-let qrInterval = null
-let statusInterval = null
-
-onMounted(() => {
-  generateQR()
-})
-
-onUnmounted(() => {
-  if (qrInterval) clearInterval(qrInterval)
-  if (statusInterval) clearInterval(statusInterval)
-})
-
-async function generateQR() {
+async function bindSession() {
   try {
     loading.value = true
-    const { authApi } = useApi()
+    error.value = ''
+
+    // Prepare request payload
+    const payload = {
+      userId: authStore.user.id,
+      phoneNumber: `62${phoneNumber.value.replace(/^0+/, '')}`
+    }
+
+    console.log('Sending payload:', payload)
+
+    // Make API request
     const response = await authApi('/api/whatsapp/bind', {
-      method: 'POST'
+      method: 'POST',
+      body: payload
     })
-    
-    qrCode.value = response.data.qrCode
-    startStatusCheck(response.data.sessionId)
-    startQRRefresh()
-  } catch (error) {
-    console.error('Error generating QR code:', error)
-    qrCode.value = ''
+
+    console.log('Response received:', response)
+
+    // Karena response berisi qrCode yang sudah dalam format data:image/png;base64
+    if (response?.qrCode) {
+      // Langsung gunakan qrCode dari response karena sudah dalam format yang benar
+      qrCode.value = response.qrCode
+      
+      // Log partial QR code untuk debugging
+      console.log('QR Code received:', qrCode.value.substring(0, 50) + '...')
+    } else {
+      throw new Error('QR Code not found in response')
+    }
+  } catch (err) {
+    console.error('Error binding WhatsApp:', err)
+    error.value = err.message || 'Failed to generate QR Code. Please try again.'
   } finally {
     loading.value = false
   }
 }
 
-function startQRRefresh() {
-  // Refresh QR code every 45 seconds
-  qrInterval = setInterval(() => {
-    if (!session.value.bound) {
-      generateQR()
-    }
-  }, 45000)
-}
+// Poll for session status
+let pollInterval = null
 
-function startStatusCheck(sessionId: string) {
-  statusInterval = setInterval(async () => {
+function startPolling() {
+  pollInterval = setInterval(async () => {
     try {
-      const { authApi } = useApi()
-      const response = await authApi(`/api/whatsapp/sessions/${sessionId}/status`)
-      session.value = response.data
-
-      if (session.value.bound) {
-        clearInterval(statusInterval)
-        clearInterval(qrInterval)
+      const response = await authApi(`/api/whatsapp/sessions/${authStore.user.id}/status`)
+      if (response.data.status === 'connected') {
+        clearInterval(pollInterval)
+        router.push('/dashboard/sessions')
       }
-    } catch (error) {
-      console.error('Error checking session status:', error)
+    } catch (err) {
+      console.error('Error polling session status:', err)
     }
-  }, 3000)
+  }, 5000) // Poll every 5 seconds
 }
 
-function goToDashboard() {
-  router.push('/dashboard')
-}
+onMounted(() => {
+  startPolling()
+})
+
+onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+  }
+})
 </script>

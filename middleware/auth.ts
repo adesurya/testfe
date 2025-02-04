@@ -27,4 +27,9 @@ export default defineNuxtRouteMiddleware((to, from) => {
   if (to.path.startsWith('/admin') && !authStore.isAdmin) {
     return navigateTo('/dashboard')
   }
+
+  // Set default layout for authenticated routes
+  if (!to.meta.layout) {
+    to.meta.layout = 'dashboard'
+  }
 })

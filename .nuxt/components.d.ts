@@ -3,6 +3,8 @@ import type { DefineComponent, SlotsType } from 'vue'
 type IslandComponent<T extends DefineComponent> = T & DefineComponent<{}, {refresh: () => Promise<void>}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, SlotsType<{ fallback: { error: unknown } }>>
 interface _GlobalComponents {
       'PaymentModal': typeof import("../components/PaymentModal.vue")['default']
+    'SidebarLinks': typeof import("../components/SidebarLinks.vue")['default']
+    'WhatsappSessionCard': typeof import("../components/WhatsappSessionCard.vue")['default']
     'AuthLoginForm': typeof import("../components/auth/LoginForm.vue")['default']
     'AuthRegisterForm': typeof import("../components/auth/RegisterForm.vue")['default']
     'ChartsBarChart': typeof import("../components/charts/BarChart.vue")['default']
@@ -111,6 +113,8 @@ interface _GlobalComponents {
     'USlideovers': IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
     'NuxtRouteAnnouncer': IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
       'LazyPaymentModal': typeof import("../components/PaymentModal.vue")['default']
+    'LazySidebarLinks': typeof import("../components/SidebarLinks.vue")['default']
+    'LazyWhatsappSessionCard': typeof import("../components/WhatsappSessionCard.vue")['default']
     'LazyAuthLoginForm': typeof import("../components/auth/LoginForm.vue")['default']
     'LazyAuthRegisterForm': typeof import("../components/auth/RegisterForm.vue")['default']
     'LazyChartsBarChart': typeof import("../components/charts/BarChart.vue")['default']
@@ -225,6 +229,8 @@ declare module 'vue' {
 }
 
 export const PaymentModal: typeof import("../components/PaymentModal.vue")['default']
+export const SidebarLinks: typeof import("../components/SidebarLinks.vue")['default']
+export const WhatsappSessionCard: typeof import("../components/WhatsappSessionCard.vue")['default']
 export const AuthLoginForm: typeof import("../components/auth/LoginForm.vue")['default']
 export const AuthRegisterForm: typeof import("../components/auth/RegisterForm.vue")['default']
 export const ChartsBarChart: typeof import("../components/charts/BarChart.vue")['default']
@@ -333,6 +339,8 @@ export const UModals: IslandComponent<typeof import("../node_modules/nuxt/dist/a
 export const USlideovers: IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
 export const NuxtRouteAnnouncer: IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
 export const LazyPaymentModal: typeof import("../components/PaymentModal.vue")['default']
+export const LazySidebarLinks: typeof import("../components/SidebarLinks.vue")['default']
+export const LazyWhatsappSessionCard: typeof import("../components/WhatsappSessionCard.vue")['default']
 export const LazyAuthLoginForm: typeof import("../components/auth/LoginForm.vue")['default']
 export const LazyAuthRegisterForm: typeof import("../components/auth/RegisterForm.vue")['default']
 export const LazyChartsBarChart: typeof import("../components/charts/BarChart.vue")['default']
