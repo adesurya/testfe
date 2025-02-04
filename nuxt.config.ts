@@ -36,7 +36,10 @@ export default defineNuxtConfig({
   routeRules: {
     '/payments/callback': { ssr: false },
     '/payments/status': { ssr: false },
-    '/payments/return': { ssr: false }
+    '/payments/return': { ssr: false },
+    '/redirect': { 
+      ssr: false  // Disable SSR for redirect page
+    }
   },
 
   build: {
