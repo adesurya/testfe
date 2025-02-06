@@ -7,10 +7,10 @@ export function useApi() {
 
   const baseURL = config.public.apiBase
 
-  const api = async (endpoint: string, options: UseFetchOptions<any> = {}) => {
+  const api = async (endpoint: string, options: any = {}) => {
     try {
       const response = await $fetch(endpoint, {
-        baseURL,
+        baseURL: config.public.apiBase,
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export function useApi() {
     }
   }
 
-  const authApi = async (endpoint: string, options: UseFetchOptions<any> = {}) => {
+  const authApi = async (endpoint: string, options: any = {}) => {
     if (!authStore.token) {
       throw new Error('No authentication token')
     }

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useApi } from '~/composables/useApi'
 
 interface Plan {
   id: number
@@ -21,13 +22,13 @@ export const useUserStore = defineStore('user', {
   state: () => ({
     sessions: [],
     loading: false,
-    error: null
+    error: null as string | null,
   }),
 
   actions: {
     async fetchUserPlan(userId: string) {
+      const { authApi } = useApi()
       try {
-        const { authApi } = useApi()
         const response = await authApi(`/api/plans/user/${userId}`, {
           headers: {
             'Accept': 'application/json'
@@ -41,39 +42,59 @@ export const useUserStore = defineStore('user', {
     },
 
     async fetchUserSessions(userId: string) {
+      const { authApi } = useApi()
       try {
-        this.loading = true;
-        const { authApi } = useApi()
         const response = await authApi(`/api/whatsapp/sessions/${userId}`)
-        // Pastikan kita mengambil data dari response dengan benar
-        this.sessions = response || []
-        return this.sessions
+        return response.data || response
       } catch (error) {
-        console.error('Error fetching sessions:', error)
+        console.error('Error fetching user sessions:', error)
         throw error
-      } finally {
-        this.loading = false
       }
     },
 
-    async fetchMessageHistory(userId: string) {
+    async fetchMessageHistory(userId: string, page = 1, limit = 10) {
+      const { authApi } = useApi()
       try {
-        const { authApi } = useApi()
-        const response = await authApi(`/api/messages/history/${userId}`, {
+        const response = await authApi(`/api/messages/history/${userId}?page=${page}&limit=${limit}`, {
           headers: {
             'Accept': 'application/json'
           }
         })
-        return response.data || response
+        return response
       } catch (error) {
-        console.error('Error fetching message history:', error)
+        console.error('Error fetching messages:', error)
+        throw error
+      }
+    },
+
+    async fetchBulkMessageHistory(userId: string, page = 1, limit = 10) {
+      const { authApi } = useApi()
+      try {
+        const response = await authApi(`/api/messages/bulk/history/${userId}?page=${page}&limit=${limit}`)
+        return response.data || []
+      } catch (error) {
+        console.error('Error fetching bulk messages:', error)
+        throw error
+      }
+    },
+
+    
+    async exportMessageReport(userId: string) {
+      const { authApi } = useApi()
+      try {
+        const response = await authApi(`/api/reports/messages/${userId}/export`, {
+          responseType: 'blob'
+        })
+        return response
+      } catch (error) {
+        console.error('Error exporting report:', error)
         throw error
       }
     },
 
     async fetchStats() {
+      const { authApi } = useApi()
       try {
-        const { authApi } = useApi()
         const response = await authApi('/api/user/stats')
         return response.data || response
       } catch (error) {

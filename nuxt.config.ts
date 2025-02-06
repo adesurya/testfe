@@ -1,6 +1,9 @@
 // nuxt.config.ts
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  build: {
+    transpile: ['jspdf', 'jspdf-autotable']
+  },
   router: {
     middleware: ['auth'] // Middleware auth akan dijalankan untuk semua route
   },

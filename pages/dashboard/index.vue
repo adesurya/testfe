@@ -1,5 +1,6 @@
 <!-- pages/dashboard/index.vue -->
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import { 
   ChatBubbleLeftRightIcon, 
   DevicePhoneMobileIcon, 
@@ -17,7 +18,26 @@ const sessions = ref([])
 const loading = ref(true)
 const error = ref(null)
 const messageHistory = ref([])
+const bulkMessages = ref([]) // Tambahkan ini
 const stats = ref(null)
+
+const combinedMessages = computed(() => {
+  const singleMessages = messageHistory.value.map(m => ({
+    ...m,
+    type: 'Single',
+    created_at: m.created_at || m.createdAt
+  }))
+  
+  const bulkMsgs = bulkMessages.value.map(m => ({
+    ...m,
+    type: 'Bulk',
+    created_at: m.created_at || m.createdAt
+  }))
+
+  return [...singleMessages, ...bulkMsgs]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 10)
+})
 
 onMounted(async () => {
   if (user.value?.id) {
@@ -48,31 +68,54 @@ async function loadSessions() {
 
 async function loadData() {
   try {
+    loading.value = true
+    const userId = authStore.user?.id
+    if (!userId) throw new Error('User ID not found')
+
     // Load all data with proper error handling and logging
     const [planResponse, sessionResponse, messageResponse, statsResponse] = await Promise.all([
-      userStore.fetchUserPlan(user.value.id),
-      userStore.fetchUserSessions(user.value.id),
-      userStore.fetchMessageHistory(user.value.id),
+      userStore.fetchUserPlan(userId),
+      userStore.fetchUserSessions(userId),
+      userStore.fetchMessageHistory(userId),
       userStore.fetchStats()
     ])
+    console.log('Message Response:', messageResponse) // Debug log
 
+    // Log responses untuk debugging
     console.log('Plan Response:', planResponse)
     console.log('Session Response:', sessionResponse)
     console.log('Message Response:', messageResponse)
     console.log('Stats Response:', statsResponse)
 
-    // Update refs with response data
+    // Pastikan messageResponse adalah array sebelum menggunakan slice
     currentPlan.value = Array.isArray(planResponse) ? 
       planResponse.find(plan => plan.status === 'active') : 
       planResponse
 
-    sessions.value = sessionResponse
-    messageHistory.value = messageResponse?.slice(0, 5) || []
+    sessions.value = Array.isArray(sessionResponse) ? sessionResponse : []
+    messageHistory.value = messageResponse?.success ? messageResponse.data : []
     stats.value = statsResponse?.data
+
+    // // Perbaikan untuk message history
+    // messageHistory.value = Array.isArray(messageResponse) ? 
+    //   messageResponse.slice(0, 5) : 
+    //   []
+
+    // stats.value = statsResponse?.data || null
   } catch (error) {
     console.error('Error loading dashboard data:', error)
+    error.value = error.message
+  } finally {
+    loading.value = false
   }
 }
+
+// Compute messages berdasarkan type
+const recentMessages = computed(() => {
+  return messageHistory.value
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 10)
+})
 
 function formatDate(date) {
   if (!date) return '-'
@@ -231,58 +274,55 @@ definePageMeta({
       </div>
     </div>
   </div>
-    <!-- Message History -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-      <div class="p-4 sm:p-6">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-medium text-gray-900">Recent Messages</h3>
-          <NuxtLink 
-            to="/dashboard/messages"
-            class="text-sm font-medium text-green-600 hover:text-green-500"
-          >
-            View All
-          </NuxtLink>
-        </div>
-        
-        <div class="mt-4">
-          <div class="overflow-x-auto">
-            <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden ring-1 ring-gray-200 sm:rounded-lg">
-                <!-- Message list with horizontal scroll for mobile -->
-                <table class="min-w-full divide-y divide-gray-300">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
-                        Recipient
-                      </th>
-                      <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Status
-                      </th>
-                      <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-200 bg-white">
-                    <tr v-for="message in messageHistory" :key="message.id">
-                      <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm">
-                        <div class="font-medium text-gray-900">{{ message.target_number }}</div>
-                        <div class="text-gray-500">{{ message.message }}</div>
-                      </td>
-                      <td class="whitespace-nowrap px-3 py-4 text-sm">
-                        <StatusBadge :status="message.status" />
-                      </td>
-                      <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {{ formatDate(message.created_at) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+
+<!-- Recent Messages Section -->
+<div class="bg-white shadow rounded-lg">
+    <div class="p-6">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-medium">Recent Messages</h3>
+        <NuxtLink to="/dashboard/report" class="text-sm text-green-600 hover:text-green-700">
+          View All
+        </NuxtLink>
+      </div>
+
+      <div v-if="loading" class="py-4">
+        <LoadingSpinner text="Loading messages..." />
+      </div>
+
+      <div v-else-if="error" class="text-sm text-red-600 mt-4">
+        {{ error }}
+      </div>
+
+      <div v-else class="mt-6 space-y-6">
+        <div v-if="recentMessages.length > 0">
+          <div v-for="msg in recentMessages" :key="msg.created_at" class="border-b pb-4 last:border-b-0">
+            <div class="flex justify-between">
+              <div>
+                <span :class="[
+                  'text-xs px-2 py-1 rounded-full',
+                  msg.message_type === 'single' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                ]">
+                  {{ msg.message_type === 'single' ? 'Single' : 'Bulk' }}
+                </span>
+                <p class="mt-2 text-sm text-gray-900">{{ msg.target_number }}</p>
+                <p class="mt-1 text-sm text-gray-500">{{ msg.message }}</p>
+              </div>
+              <div>
+                <StatusBadge :status="msg.status" />
+                <p class="mt-1 text-xs text-gray-500">{{ formatDate(msg.created_at) }}</p>
               </div>
             </div>
           </div>
         </div>
+
+        <div v-else class="text-center py-6">
+          <ChatBubbleLeftRightIcon class="mx-auto h-12 w-12 text-gray-400" />
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No messages</h3>
+          <p class="mt-1 text-sm text-gray-500">Start sending messages to see your history here</p>
+        </div>
       </div>
     </div>
+  </div>
+    
   </div>
 </template>

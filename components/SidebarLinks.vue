@@ -63,7 +63,8 @@
     ChatBubbleLeftRightIcon,
     UserIcon,
     CogIcon,
-    ArrowLeftOnRectangleIcon
+    ArrowLeftOnRectangleIcon,
+    DocumentChartBarIcon
   } from '@heroicons/vue/24/outline'
   
   const route = useRoute()
@@ -73,6 +74,8 @@
   const navigationItems = [
     { name: 'Dashboard', to: '/dashboard', icon: HomeIcon },
     { name: 'Messages', to: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
+    { name: 'Reports', to: '/dashboard/report', icon: DocumentChartBarIcon }
+
   ]
   
   const profileItems = [
