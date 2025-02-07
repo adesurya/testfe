@@ -1,16 +1,81 @@
-<!-- components/SidebarLinks.vue -->
 <template>
-    <div class="space-y-4">
-      <!-- Main Navigation -->
-      <div class="space-y-1">
+  <div class="space-y-4">
+    <!-- Main Navigation -->
+    <div class="space-y-1">
+      <template v-for="item in navigationItems" :key="item.name">
+        <!-- Regular Menu Item -->
         <NuxtLink
-          v-for="item in navigationItems"
+          v-if="!item.children"
+          :to="item.to"
+          class="flex items-center px-3 py-2 text-sm font-medium rounded-md"
+          :class="[
+            isActive(item.to)
+              ? 'bg-green-50 text-green-600'
+              : 'text-gray-700 hover:bg-gray-50'
+          ]"
+          @click="$emit('click')"
+        >
+          <component :is="item.icon" class="h-5 w-5 mr-3" />
+          {{ item.name }}
+        </NuxtLink>
+
+        <!-- Menu Item with Submenu -->
+        <div v-else>
+          <button
+            @click="toggleSubmenu(item.name)"
+            class="flex items-center w-full px-3 py-2 text-sm font-medium rounded-md"
+            :class="[
+              isActive(item.to)
+                ? 'bg-green-50 text-green-600'
+                : 'text-gray-700 hover:bg-gray-50'
+            ]"
+          >
+            <component :is="item.icon" class="h-5 w-5 mr-3" />
+            <span class="flex-1">{{ item.name }}</span>
+            <ChevronDownIcon 
+              class="h-5 w-5 transform transition-transform duration-200"
+              :class="{ 'rotate-180': openSubmenus.includes(item.name) }"
+            />
+          </button>
+
+          <!-- Submenu Items -->
+          <div
+            v-show="openSubmenus.includes(item.name)"
+            class="mt-1 space-y-1 pl-10"
+          >
+            <NuxtLink
+              v-for="subItem in item.children"
+              :key="subItem.name"
+              :to="subItem.to"
+              class="block px-3 py-2 text-sm font-medium rounded-md"
+              :class="[
+                isActive(subItem.to)
+                  ? 'text-green-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              ]"
+              @click="$emit('click')"
+            >
+              {{ subItem.name }}
+            </NuxtLink>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Profile Section -->
+    <div class="pt-4 mt-4 border-t border-gray-200">
+      <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        Profile
+      </h3>
+      <div class="mt-2 space-y-1">
+        <NuxtLink
+          v-for="item in profileItems"
           :key="item.name"
           :to="item.to"
           class="flex items-center px-3 py-2 text-sm font-medium rounded-md"
           :class="[
-            route.path === item.to 
-              ? 'bg-green-50 text-green-600' 
+            isActive(item.to)
+              ? 'bg-green-50 text-green-600'
               : 'text-gray-700 hover:bg-gray-50'
           ]"
           @click="$emit('click')"
@@ -19,76 +84,77 @@
           {{ item.name }}
         </NuxtLink>
       </div>
-  
-      <!-- Profile Section -->
-      <div class="pt-4 mt-4 border-t border-gray-200">
-        <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Profile
-        </h3>
-        <div class="mt-2 space-y-1">
-          <NuxtLink
-            v-for="item in profileItems"
-            :key="item.name"
-            :to="item.to"
-            class="flex items-center px-3 py-2 text-sm font-medium rounded-md"
-            :class="[
-              route.path === item.to 
-                ? 'bg-green-50 text-green-600' 
-                : 'text-gray-700 hover:bg-gray-50'
-            ]"
-            @click="$emit('click')"
-          >
-            <component :is="item.icon" class="h-5 w-5 mr-3" />
-            {{ item.name }}
-          </NuxtLink>
-        </div>
-      </div>
-  
-      <!-- Logout Button -->
-      <div class="pt-4 mt-4 border-t border-gray-200">
-        <button
-          @click="handleLogout"
-          class="flex w-full items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md"
-        >
-          <ArrowLeftOnRectangleIcon class="h-5 w-5 mr-3" />
-          Logout
-        </button>
-      </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { 
-    HomeIcon, 
-    ChatBubbleLeftRightIcon,
-    UserIcon,
-    CogIcon,
-    ArrowLeftOnRectangleIcon,
-    DocumentChartBarIcon
-  } from '@heroicons/vue/24/outline'
-  
-  const route = useRoute()
-  const router = useRouter()
-  const authStore = useAuthStore()
-  
-  const navigationItems = [
-    { name: 'Dashboard', to: '/dashboard', icon: HomeIcon },
-    { name: 'Messages', to: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
-    { name: 'Reports', to: '/dashboard/report', icon: DocumentChartBarIcon }
 
-  ]
-  
-  const profileItems = [
-    { name: 'My Profile', to: '/profile', icon: UserIcon },
-    { name: 'Settings', to: '/settings', icon: CogIcon },
-  ]
-  
-  async function handleLogout() {
-    try {
-      await authStore.logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
+    <!-- Logout Button -->
+    <div class="pt-4 mt-4 border-t border-gray-200">
+      <button
+        @click="handleLogout"
+        class="flex w-full items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md"
+      >
+        <ArrowLeftOnRectangleIcon class="h-5 w-5 mr-3" />
+        Logout
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { 
+  HomeIcon, 
+  ChatBubbleLeftRightIcon,
+  UserIcon,
+  CogIcon,
+  ArrowLeftOnRectangleIcon,
+  DocumentChartBarIcon,
+  ChevronDownIcon
+} from '@heroicons/vue/24/outline'
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+
+const openSubmenus = ref([])
+
+const navigationItems = [
+  { name: 'Dashboard', to: '/dashboard', icon: HomeIcon },
+  { name: 'Messages',  to: '/dashboard/messages', icon: ChatBubbleLeftRightIcon,
+    children: [
+      { name: 'Single Message', to: '/dashboard/messages/single' },
+      { name: 'Bulk Message', to: '/dashboard/messages/bulk' }
+    ]
+  },
+  { name: 'Reports', to: '/dashboard/report', icon: DocumentChartBarIcon }
+]
+
+const profileItems = [
+  { name: 'My Profile', to: '/profile', icon: UserIcon },
+  { name: 'Settings', to: '/settings', icon: CogIcon },
+]
+
+function isActive(path) {
+  if (path === '/dashboard' && route.path === '/dashboard') {
+    return true
   }
-  </script>
+  return route.path.startsWith(path) && path !== '/dashboard'
+}
+
+function toggleSubmenu(name) {
+  const index = openSubmenus.value.indexOf(name)
+  if (index === -1) {
+    openSubmenus.value.push(name)
+  } else {
+    openSubmenus.value.splice(index, 1)
+  }
+}
+
+async function handleLogout() {
+  try {
+    await authStore.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout error:', error)
+  }
+}
+</script>

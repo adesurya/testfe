@@ -9,6 +9,12 @@ interface Message {
   media?: string
 }
 
+interface MessageState {
+  messages: any[]
+  loading: boolean
+  error: string | null
+}
+
 interface BulkMessage {
   id: number
   targetNumbers: string[]
@@ -21,68 +27,104 @@ interface BulkMessage {
 }
 
 export const useMessageStore = defineStore('message', {
-  state: () => ({
-    messages: [] as Message[],
-    bulkMessages: [] as BulkMessage[],
-    loading: false
+  state: (): MessageState => ({
+    messages: [],
+    loading: false,
+    error: null
   }),
 
   actions: {
     async sendMessage(messageData: {
       targetNumber: string
       message: string
-      media?: File
-      scheduleTime?: Date
+      imagePath?: File
+      delay?: number
     }) {
       try {
         this.loading = true
         const { authApi } = useApi()
         
-        let formData = new FormData()
+        // Create FormData for multipart/form-data request
+        const formData = new FormData()
         formData.append('targetNumber', messageData.targetNumber)
         formData.append('message', messageData.message)
-        
-        if (messageData.media) {
-          formData.append('media', messageData.media)
-        }
-        
-        if (messageData.scheduleTime) {
-          formData.append('scheduleTime', messageData.scheduleTime.toISOString())
+        formData.append('delay', String(messageData.delay || 5))
+
+        if (messageData.imagePath) {
+          formData.append('imagePath', messageData.imagePath)
         }
 
         const response = await authApi('/api/messages/send', {
           method: 'POST',
           body: formData
         })
-        
-        return response.data
-      } catch (error) {
+
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to send message')
+        }
+
+        return response
+
+      } catch (error: any) {
         console.error('Error sending message:', error)
-        throw error
+        throw new Error(error.response?.data?.error || error.message || 'Failed to send message')
       } finally {
         this.loading = false
       }
     },
 
-    async sendBulkMessages(bulkData: {
+    async sendBulkMessages(messageData: {
       targetNumbers: string[]
       message: string
-      baseDelay: number
-      intervalDelay: number
+      baseDelay?: number
+      intervalDelay?: number
     }) {
       try {
         this.loading = true
         const { authApi } = useApi()
+
+        const payload = {
+          targetNumbers: messageData.targetNumbers,
+          message: messageData.message,
+          baseDelay: messageData.baseDelay || 5,
+          intervalDelay: messageData.intervalDelay || 5
+        }
+
         const response = await authApi('/api/messages/bulk/send', {
           method: 'POST',
-          body: bulkData
+          body: JSON.stringify(payload),
+          headers: {
+            'Content-Type': 'application/json'
+          }
         })
-        return response.data
-      } catch (error) {
+
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to send bulk messages')
+        }
+
+        return response
+
+      } catch (error: any) {
         console.error('Error sending bulk messages:', error)
-        throw error
+        throw new Error(error.response?.data?.error || error.message || 'Failed to send bulk messages')
       } finally {
         this.loading = false
+      }
+    },
+
+    async getBulkProgress(bulkId: string) {
+      try {
+        const { authApi } = useApi()
+        const response = await authApi(`/api/messages/bulk/${bulkId}/status`)
+        
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to get bulk progress')
+        }
+
+        return response.data
+      } catch (error: any) {
+        console.error('Error checking bulk progress:', error)
+        throw new Error(error.response?.data?.error || error.message || 'Failed to check bulk progress')
       }
     },
 
@@ -90,14 +132,21 @@ export const useMessageStore = defineStore('message', {
       try {
         this.loading = true
         const { authApi } = useApi()
-        const response = await authApi('/api/messages/history', {
+        
+        const response = await authApi('/api/messages', {
           params
         })
-        this.messages = response.data.messages
+
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to fetch messages')
+        }
+
+        this.messages = response.data
         return response.data
-      } catch (error) {
+
+      } catch (error: any) {
         console.error('Error fetching messages:', error)
-        throw error
+        throw new Error(error.response?.data?.error || error.message || 'Failed to fetch messages')
       } finally {
         this.loading = false
       }

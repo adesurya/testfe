@@ -1,120 +1,193 @@
 <template>
-    <div class="bg-white shadow rounded-lg p-6">
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Message Format</label>
-        <div class="mt-2 flex flex-wrap gap-2">
-          <button
-            v-for="format in formats"
-            :key="format.type"
-            @click="applyFormat(format)"
-            class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium"
-            :class="format.buttonClass"
-          >
-            {{ format.label }}
-          </button>
+  <div class="border rounded-lg shadow-sm bg-white">
+    <!-- Toolbar -->
+    <div class="flex flex-wrap items-center gap-1 p-2 border-b">
+      <!-- Format Buttons -->
+      <button
+        v-for="format in formats"
+        :key="format.id"
+        @click="applyFormat(format.markup)"
+        class="p-2 hover:bg-gray-100 rounded"
+        :title="format.label"
+      >
+        <component :is="format.icon" class="h-4 w-4 text-gray-600" />
+      </button>
+
+      <!-- Divider -->
+      <div class="w-px h-6 bg-gray-200 mx-2"></div>
+
+      <!-- Emoji Picker -->
+      <div class="relative">
+        <button
+          @click="showEmojiPicker = !showEmojiPicker"
+          class="p-2 hover:bg-gray-100 rounded"
+          title="Insert Emoji"
+        >
+          <SmileIcon class="h-4 w-4 text-gray-600" />
+        </button>
+
+        <div
+          v-if="showEmojiPicker"
+          v-click-outside="() => showEmojiPicker = false"
+          class="absolute z-50 mt-1 bg-white border rounded-lg shadow-lg p-4 w-[320px]"
+        >
+          <div class="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
+            <button
+              v-for="(emoji, code) in emojiMap"
+              :key="code"
+              @click="insertEmoji(emoji)"
+              class="p-1 hover:bg-gray-100 rounded text-lg"
+              :title="code"
+            >
+              {{ emoji }}
+            </button>
+          </div>
         </div>
       </div>
-  
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Target Number</label>
-          <input 
-            v-model="message.targetNumber"
-            type="text"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          >
-        </div>
-  
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Message</label>
-          <textarea
-            v-model="message.content"
-            rows="4"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          ></textarea>
-        </div>
-  
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Image (optional)</label>
-          <input
-            type="file"
-            @change="handleImageUpload"
-            accept="image/*"
-            class="mt-1 block w-full"
-          >
-        </div>
-  
+
+      <!-- Media Upload -->
+      <div v-if="allowMedia">
         <button
-          @click="sendMessage"
-          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+          @click="triggerFileInput"
+          class="p-2 hover:bg-gray-100 rounded"
+          title="Upload Image"
         >
-          Send Message
+          <ImageIcon class="h-4 w-4 text-gray-600" />
         </button>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          @change="handleFileUpload"
+        >
       </div>
     </div>
-  </template>
+
+    <!-- Editor Area -->
+    <textarea
+      ref="textarea"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
+      rows="6"
+      :placeholder="placeholder"
+      class="w-full p-4 focus:outline-none resize-none"
+    ></textarea>
+
+    <!-- Preview -->
+    <div class="border-t p-4 bg-gray-50">
+      <div class="text-sm font-medium text-gray-500 mb-2">Preview</div>
+      <div class="prose prose-sm max-w-none whitespace-pre-wrap">{{ previewText }}</div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { SmileIcon, ImageIcon } from 'lucide-vue-next'
+
+const props = defineProps({
+  modelValue: {
+    type: String,
+    default: ''
+  },
+  placeholder: {
+    type: String,
+    default: 'Type your message here...'
+  },
+  allowMedia: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['update:modelValue', 'media-upload'])
+
+const textarea = ref(null)
+const fileInput = ref(null)
+const showEmojiPicker = ref(false)
+
+// Format buttons configuration
+const formats = [
+  { id: 'bold', label: 'Bold', markup: '**' },
+  { id: 'italic', label: 'Italic', markup: '_' },
+  { id: 'strikethrough', label: 'Strikethrough', markup: '~~' },
+]
+
+// Emoji mapping
+const emojiMap = {
+  ':fire:': '🔥',
+  ':smile:': '😊',
+  ':heart:': '❤️',
+  ':check:': '✅',
+  ':x:': '❌',
+  ':star:': '⭐',
+  ':laugh:': '😂',
+  ':wink:': '😉',
+  ':cry:': '😢',
+  ':angry:': '😠',
+  ':cool:': '😎',
+  ':love:': '😍',
+  ':thinking:': '🤔',
+  ':clap:': '👏',
+  ':pray:': '🙏',
+  ':rocket:': '🚀',
+  ':warning:': '⚠️',
+  ':info:': 'ℹ️',
+  ':phone:': '📱',
+  ':mail:': '📧',
+  ':ok:': '👌'
+}
+
+// Preview with emoji replacement
+const previewText = computed(() => {
+  let content = props.modelValue
   
-  <script setup lang="ts">
-  const { authApi } = useApi()
-  
-  const message = ref({
-    targetNumber: '',
-    content: '',
-    imagePath: ''
+  // Replace emoji codes with actual emojis
+  Object.entries(emojiMap).forEach(([code, emoji]) => {
+    content = content.replace(new RegExp(code, 'g'), emoji)
   })
   
-  const formats = [
-    { type: 'bold', label: 'Bold', buttonClass: 'bg-gray-100 hover:bg-gray-200', wrapper: '**' },
-    { type: 'italic', label: 'Italic', buttonClass: 'bg-gray-100 hover:bg-gray-200', wrapper: '__' },
-    { type: 'strike', label: 'Strikethrough', buttonClass: 'bg-gray-100 hover:bg-gray-200', wrapper: '~~' }
-  ]
+  return content
+})
+
+// Format text functions
+function applyFormat(format) {
+  const start = textarea.value.selectionStart
+  const end = textarea.value.selectionEnd
+  const text = props.modelValue
   
-  function applyFormat(format) {
-    const textarea = document.querySelector('textarea')
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = message.value.content
-  
-    message.value.content = 
-      text.substring(0, start) + 
-      format.wrapper + 
-      text.substring(start, end) + 
-      format.wrapper + 
-      text.substring(end)
+  const selection = text.substring(start, end)
+  const formatted = `${format}${selection}${format}`
+  const newText = text.substring(0, start) + formatted + text.substring(end)
+  emit('update:modelValue', newText)
+}
+
+// Emoji functions
+function insertEmoji(emoji) {
+  const start = textarea.value.selectionStart
+  const newText = props.modelValue.slice(0, start) + emoji + props.modelValue.slice(start)
+  emit('update:modelValue', newText)
+  showEmojiPicker.value = false
+}
+
+// File upload functions
+function triggerFileInput() {
+  fileInput.value.click()
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0]
+  if (file) {
+    emit('media-upload', file)
   }
-  
-  async function handleImageUpload(event) {
-    const file = event.target.files[0]
-    if (file) {
-      const formData = new FormData()
-      formData.append('image', file)
-      
-      try {
-        const response = await authApi('/api/upload', {
-          method: 'POST',
-          body: formData
-        })
-        message.value.imagePath = response.path
-      } catch (error) {
-        console.error('Upload error:', error)
-      }
-    }
-  }
-  
-  async function sendMessage() {
-    try {
-      await authApi('/api/messages/send', {
-        method: 'POST',
-        body: {
-          targetNumber: message.value.targetNumber,
-          message: message.value.content,
-          imagePath: message.value.imagePath
-        }
-      })
-      // Reset form
-      message.value = { targetNumber: '', content: '', imagePath: '' }
-    } catch (error) {
-      console.error('Send error:', error)
-    }
-  }
-  </script>
+  fileInput.value.value = '' // Reset file input
+}
+</script>
+
+<style scoped>
+.prose img {
+  max-width: 100%;
+  height: auto;
+}
+</style>
