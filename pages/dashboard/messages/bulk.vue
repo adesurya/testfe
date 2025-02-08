@@ -5,6 +5,8 @@
       subtitle="Send messages to multiple recipients"
     />
 
+    <UNotifications />
+
     <div class="bg-white shadow rounded-lg p-6">
       <form @submit.prevent="sendBulkMessage" class="space-y-6">
         <!-- CSV Upload -->
@@ -77,17 +79,17 @@
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <!-- <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Custom1</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Custom2</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Custom2</th> -->
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                   <tr v-for="(recipient, index) in recipients.slice(0, 5)" :key="index">
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">+62{{ recipient.phone }}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ recipient.name || '-' }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">+{{ recipient.phone }}</td>
+                    <!-- <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ recipient.name || '-' }}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ recipient.custom1 || '-' }}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ recipient.custom2 || '-' }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ recipient.custom2 || '-' }}</td> -->
                   </tr>
                 </tbody>
               </table>
@@ -109,7 +111,7 @@
               <!-- Text Formatting -->
               <button 
                 type="button"
-                @click="insertFormat('**', '**')"
+                @click="insertFormat('*', '*')"
                 class="p-1.5 rounded hover:bg-gray-100"
                 title="Bold"
               >
@@ -125,39 +127,11 @@
               </button>
               <button 
                 type="button"
-                @click="insertFormat('~~', '~~')"
+                @click="insertFormat('~', '~')"
                 class="p-1.5 rounded hover:bg-gray-100"
                 title="Strikethrough"
               >
                 <span class="line-through">S</span>
-              </button>
-
-              <div class="w-px h-5 bg-gray-300"></div>
-
-              <!-- Template Variables -->
-              <button 
-                type="button"
-                @click="insertTemplate('{name}')"
-                class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200"
-                title="Insert recipient name"
-              >
-                {name}
-              </button>
-              <button 
-                type="button"
-                @click="insertTemplate('{custom1}')"
-                class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200"
-                title="Insert custom field 1"
-              >
-                {custom1}
-              </button>
-              <button 
-                type="button"
-                @click="insertTemplate('{custom2}')"
-                class="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200"
-                title="Insert custom field 2"
-              >
-                {custom2}
               </button>
 
               <div class="w-px h-5 bg-gray-300"></div>
@@ -199,7 +173,7 @@
               rows="6"
               required
               class="block w-full p-3 border-0 focus:ring-0 sm:text-sm"
-              placeholder="Type your message template here...&#10;Use {name}, {custom1}, {custom2} to personalize the message"
+              placeholder="Type your message template here..."
             ></textarea>
 
             <!-- Preview -->
@@ -211,6 +185,43 @@
             </div>
           </div>
         </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          Image (Optional)
+        </label>
+        <div class="mt-1 flex items-center">
+            <input
+              type="file"
+              ref="fileInput"
+              @change="handleImageUpload"
+              accept="image/*"
+              class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-medium
+                file:bg-green-50 file:text-green-700
+                hover:file:bg-green-100"
+            />
+        </div>
+      <!-- Image Preview -->
+      <div v-if="selectedImage" class="mt-2">
+        <div class="relative inline-block">
+          <img 
+            :src="imagePreview" 
+            alt="Selected image" 
+            class="h-32 w-32 object-cover rounded-lg"
+          />
+          <button
+            type="button"
+            @click="removeImage"
+            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+          >
+            <XCircleIcon class="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </div>
 
         <!-- Error Message -->
         <div v-if="error" class="rounded-md bg-red-50 p-4">
@@ -297,7 +308,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { DownloadIcon, XCircleIcon } from '@heroicons/vue/24/outline'
+import { XCircleIcon } from '@heroicons/vue/24/outline'
 
 // Define page layout
 definePageMeta({
@@ -305,8 +316,18 @@ definePageMeta({
   middleware: ['auth']
 })
 
+const fileInput = ref(null)
+const selectedImage = ref(null)
 const messageStore = useMessageStore()
+const authStore = useAuthStore()
 
+// Tambahan computed property
+const imagePreview = computed(() => {
+  if (selectedImage.value) {
+    return URL.createObjectURL(selectedImage.value)
+  }
+  return null
+})
 // Form state
 const message = ref('')
 const recipients = ref([])
@@ -351,6 +372,25 @@ const emojis = {
   ':ok:': '👌'
 }
 
+function handleImageUpload(event) {
+  const file = event.target.files[0]
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) {
+      error.value = 'Image size should not exceed 5MB'
+      return
+    }
+    selectedImage.value = file
+  }
+}
+
+function removeImage() {
+  selectedImage.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
+
 // Sample data for preview
 const sampleData = {
   name: 'John Doe',
@@ -383,15 +423,11 @@ function handleFileUpload(event) {
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
-      const text = e.target.result
+      const text = e.target.result.toString()
       const rows = text.split('\n')
       
-      // Find the headers
       const headers = rows[0].toLowerCase().trim().split(',')
       const phoneIndex = headers.findIndex(h => h.includes('phone'))
-      const nameIndex = headers.findIndex(h => h.includes('name'))
-      const custom1Index = headers.findIndex(h => h.includes('custom1'))
-      const custom2Index = headers.findIndex(h => h.includes('custom2'))
 
       if (phoneIndex === -1) {
         error.value = 'CSV must contain a phone column'
@@ -399,34 +435,36 @@ function handleFileUpload(event) {
       }
 
       // Process rows
-      const processedRecipients = rows
-        .slice(1) // Skip header row
-        .filter(row => row.trim()) // Remove empty rows
+      recipients.value = rows
+        .slice(1)
+        .filter(row => row.trim())
         .map(row => {
           const columns = row.split(',').map(col => col.trim())
-          const phone = columns[phoneIndex]?.replace(/^0+/, '') // Remove leading zeros
+          // Ambil hanya angka dari kolom phone
+          let phone = columns[phoneIndex]?.split(';')[0]?.replace(/^0+/, '') // Ambil bagian sebelum semicolon dan hapus leading zeros
           
           if (!phone) return null
 
-          return {
-            phone: phone.startsWith('62') ? phone : `62${phone}`,
-            name: nameIndex !== -1 ? columns[nameIndex] || '' : '',
-            custom1: custom1Index !== -1 ? columns[custom1Index] || '' : '',
-            custom2: custom2Index !== -1 ? columns[custom2Index] || '' : ''
+          // Format nomor telepon
+          if (!phone.startsWith('62')) {
+            phone = `62${phone}`
           }
+
+          return { phone }
         })
         .filter(recipient => recipient !== null)
 
-      if (processedRecipients.length === 0) {
+      if (recipients.value.length === 0) {
         error.value = 'No valid phone numbers found in CSV'
         return
       }
 
-      recipients.value = processedRecipients
+      console.log('Processed recipients:', recipients.value)
       error.value = null
+
     } catch (err) {
-      error.value = 'Error processing CSV file'
       console.error('CSV processing error:', err)
+      error.value = 'Error processing CSV file'
     }
   }
 
@@ -499,6 +537,7 @@ function insertEmoji(emoji) {
 }
 
 // Message sending functions
+// pages/dashboard/messages/bulk.vue
 async function sendBulkMessage() {
   if (!message.value || recipients.value.length === 0) return
 
@@ -507,25 +546,80 @@ async function sendBulkMessage() {
     sending.value = true
     showProgress.value = true
 
-    const response = await messageStore.sendBulkMessages({
-      targetNumbers: recipients.value.map(r => r.phone),
-      message: message.value,
-      baseDelay: 5,
-      intervalDelay: 5
-    })
+    // Format phoneNumbers dengan benar
+    const formData = new FormData()
 
-    if (response.bulkId) {
-      startProgressPolling(response.bulkId)
+    // Pastikan format data sesuai yang diharapkan backend
+    const requestData = {
+      userId: authStore.user?.id.toString(),
+      targetNumbers: recipients.value.map(r => r.phone), // Array of phone numbers
+      message: message.value,
+      baseDelay: 20,
+      intervalDelay: 10
+    }
+
+    // Debug log untuk memastikan format data
+    console.log('Request Data:', requestData)
+
+    // Tambahkan data ke FormData
+    formData.append('data', JSON.stringify(requestData))
+
+    // Tambahkan image jika ada
+    if (selectedImage.value) {
+      formData.append('image', selectedImage.value)
+    }
+
+    // Kirim request
+    const response = await messageStore.sendBulkMessages(formData)
+
+    if (response.success) {
+      useToast().add({
+        title: 'Success',
+        description: 'Messages are being sent',
+        color: 'green'
+      })
+
+      // Reset form setelah berhasil
+      message.value = ''
+      recipients.value = []
+      selectedImage.value = null
+      if (fileInput.value) {
+        fileInput.value.value = ''
+      }
     } else {
-      throw new Error('No bulk ID received from server')
+      throw new Error(response.error || 'Failed to send messages')
     }
 
   } catch (err) {
+    console.error('Error sending bulk messages:', err)
     error.value = err.message
     showProgress.value = false
-    useToast().error('Failed to send messages')
+    useToast().add({
+      title: 'Error',
+      description: err.message,
+      color: 'red'
+    })
   } finally {
     sending.value = false
+  }
+}
+
+function handleSuccess(response) {
+  useToast().add({
+    title: 'Success',
+    description: 'Messages are being sent',
+    color: 'green'
+  })
+
+  if (response.bulkId) {
+    startProgressPolling(response.bulkId)
+    // Reset form
+    message.value = ''
+    recipients.value = []
+    selectedImage.value = null
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
   }
 }
 
@@ -570,6 +664,10 @@ function handleComplete() {
   message.value = ''
   recipients.value = []
   error.value = null
+  selectedImage.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
 }
 
 // Event listeners

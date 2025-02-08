@@ -10,7 +10,7 @@ export function useApi() {
   const api = async (endpoint: string, options: any = {}) => {
     try {
       const response = await $fetch(endpoint, {
-        baseURL: config.public.apiBase,
+        baseURL,
         ...options,
         headers: {
           'Content-Type': 'application/json',

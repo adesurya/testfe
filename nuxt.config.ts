@@ -14,6 +14,21 @@ export default defineNuxtConfig({
     '@vueuse/nuxt'
   ],
 
+  components: {
+    dirs: [
+      '~/components',
+      '~/components/messages'
+    ]
+  },
+
+  ui: {
+    notifications: {
+      // Notifications module options
+      position: 'top-right',
+      duration: 3000
+    }
+  },
+
   pinia: {
     autoImports: ['defineStore', 'storeToRefs'],
   },

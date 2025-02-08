@@ -60,6 +60,7 @@
   </div>
 </template>
 
+
 <script setup>
 const router = useRouter()
 const route = useRoute()
@@ -78,21 +79,31 @@ async function handleLogin() {
     error.value = ''
     loading.value = true
     
-    const result = await authStore.login({
-      username: form.value.username,
-      password: form.value.password
+    const response = await $fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      body: {
+        username: form.value.username,
+        password: form.value.password
+      }
     })
 
-    if (result && result.token) {
-      // Redirect ke dashboard atau halaman yang diminta
+    // Response langsung memiliki token dan user
+    if (response.token && response.user) {
+      // Update auth store dengan response langsung
+      await authStore.login({
+        token: response.token,
+        user: response.user
+      })
+      
+      // Redirect ke dashboard atau halaman redirect
       const redirectPath = route.query.redirect?.toString() || '/dashboard'
-      await navigateTo(redirectPath)
+      await router.push(redirectPath)
     } else {
-      throw new Error('Login failed - Invalid response')
+      throw new Error('Invalid server response')
     }
   } catch (err) {
     console.error('Login error:', err)
-    error.value = err.message || 'Failed to login. Please check your credentials.'
+    error.value = 'Failed to login. Please check your credentials.'
   } finally {
     loading.value = false
   }

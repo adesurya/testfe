@@ -1,3 +1,4 @@
+// stores/message.ts
 import { defineStore } from 'pinia'
 
 interface Message {
@@ -27,88 +28,109 @@ interface BulkMessage {
 }
 
 export const useMessageStore = defineStore('message', {
-  state: (): MessageState => ({
+  state: () => ({
     messages: [],
     loading: false,
     error: null
   }),
 
   actions: {
-    async sendMessage(messageData: {
-      targetNumber: string
-      message: string
-      imagePath?: File
-      delay?: number
-    }) {
+    async sendMessage(messageData: any) {
       try {
         this.loading = true
-        const { authApi } = useApi()
+        const authStore = useAuthStore()
         
-        // Create FormData for multipart/form-data request
-        const formData = new FormData()
-        formData.append('targetNumber', messageData.targetNumber)
-        formData.append('message', messageData.message)
-        formData.append('delay', String(messageData.delay || 5))
-
-        if (messageData.imagePath) {
-          formData.append('imagePath', messageData.imagePath)
+        if (!authStore.token) {
+          throw new Error('Authentication token not found')
         }
-
-        const response = await authApi('/api/messages/send', {
+    
+        // Jika ada file gambar, gunakan FormData
+        if (messageData.imagePath instanceof File) {
+          const formData = new FormData()
+          
+          // Tambahkan setiap field secara individual
+          formData.append('userId', messageData.userId)
+          formData.append('targetNumber', messageData.targetNumber)
+          formData.append('message', messageData.message)
+          formData.append('delay', messageData.delay?.toString() || '0')
+          formData.append('image', messageData.imagePath)
+    
+          console.log('Sending formData:', {
+            userId: messageData.userId,
+            targetNumber: messageData.targetNumber,
+            message: messageData.message,
+            delay: messageData.delay
+          }) // Debug log
+    
+          const response = await $fetch('http://localhost:8000/api/messages/send', {
+            method: 'POST',
+            headers: {
+              'Accept': '*/*',
+              'Authorization': `Bearer ${authStore.token}`
+            },
+            body: formData
+          })
+    
+          return response
+        }
+    
+        // Jika tidak ada gambar, kirim sebagai JSON biasa
+        const payload = {
+          userId: messageData.userId,
+          targetNumber: messageData.targetNumber,
+          message: messageData.message,
+          delay: messageData.delay || 0
+        }
+    
+        const response = await $fetch('http://localhost:8000/api/messages/send', {
           method: 'POST',
-          body: formData
+          headers: {
+            'Accept': '*/*',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authStore.token}`
+          },
+          body: payload
         })
-
-        if (!response.success) {
-          throw new Error(response.error || 'Failed to send message')
-        }
-
+    
         return response
-
+    
       } catch (error: any) {
-        console.error('Error sending message:', error)
-        throw new Error(error.response?.data?.error || error.message || 'Failed to send message')
+        console.error('Send message error details:', error) // Debug log
+        if (error.response) {
+          return {
+            success: false,
+            error: error.response._data?.error || 'Server error occurred'
+          }
+        }
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred'
+        }
       } finally {
         this.loading = false
       }
     },
 
-    async sendBulkMessages(messageData: {
-      targetNumbers: string[]
-      message: string
-      baseDelay?: number
-      intervalDelay?: number
-    }) {
+    async sendBulkMessages(formData: FormData) {
       try {
-        this.loading = true
         const { authApi } = useApi()
-
-        const payload = {
-          targetNumbers: messageData.targetNumbers,
-          message: messageData.message,
-          baseDelay: messageData.baseDelay || 5,
-          intervalDelay: messageData.intervalDelay || 5
+        
+        // Debug log untuk cek FormData
+        console.log('FormData content:')
+        for (let [key, value] of formData.entries()) {
+          console.log(`${key}:`, value)
         }
-
+    
         const response = await authApi('/api/messages/bulk/send', {
           method: 'POST',
-          body: JSON.stringify(payload),
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          body: formData
         })
-
-        if (!response.success) {
-          throw new Error(response.error || 'Failed to send bulk messages')
-        }
-
+    
         return response
-
+    
       } catch (error: any) {
         console.error('Error sending bulk messages:', error)
-        throw new Error(error.response?.data?.error || error.message || 'Failed to send bulk messages')
-      } finally {
-        this.loading = false
+        throw error
       }
     },
 
@@ -169,4 +191,4 @@ export const useMessageStore = defineStore('message', {
       }
     }
   }
-})
+}) // Fixed: Added closing brace here

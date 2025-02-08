@@ -91,6 +91,23 @@ function removeToast(id: number) {
 
 // Expose the addToast method to other components
 defineExpose({
-  addToast
+  addToast: (toast: {
+    type: 'success' | 'error' | 'warning'
+    title: string
+    message?: string
+    duration?: number
+  }) => {
+    const id = Date.now()
+    const duration = toast.duration || 5000
+
+    toasts.value.push({
+      ...toast,
+      id
+    })
+
+    setTimeout(() => {
+      removeToast(id)
+    }, duration)
+  }
 })
 </script>
