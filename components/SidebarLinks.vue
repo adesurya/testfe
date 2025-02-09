@@ -19,21 +19,24 @@
           {{ item.name }}
         </NuxtLink>
 
-        <!-- Menu Item with Submenu -->
+                  <!-- Menu Item with Submenu -->
         <div v-else>
+          <!-- Parent Menu Button -->
           <button
             @click="toggleSubmenu(item.name)"
-            class="flex items-center w-full px-3 py-2 text-sm font-medium rounded-md"
+            class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md"
             :class="[
-              isActive(item.to)
+              hasActiveChild(item)
                 ? 'bg-green-50 text-green-600'
                 : 'text-gray-700 hover:bg-gray-50'
             ]"
           >
-            <component :is="item.icon" class="h-5 w-5 mr-3" />
-            <span class="flex-1">{{ item.name }}</span>
+            <div class="flex items-center min-w-0 flex-1">
+              <component :is="item.icon" class="h-5 w-5 mr-3 flex-shrink-0" />
+              <span class="truncate">{{ item.name }}</span>
+            </div>
             <ChevronDownIcon 
-              class="h-5 w-5 transform transition-transform duration-200"
+              class="h-5 w-5 transform transition-transform duration-200 ml-2 flex-shrink-0"
               :class="{ 'rotate-180': openSubmenus.includes(item.name) }"
             />
           </button>
@@ -41,7 +44,7 @@
           <!-- Submenu Items -->
           <div
             v-show="openSubmenus.includes(item.name)"
-            class="mt-1 space-y-1 pl-10"
+            class="mt-1 space-y-1 ml-8"
           >
             <NuxtLink
               v-for="subItem in item.children"
@@ -50,10 +53,10 @@
               class="block px-3 py-2 text-sm font-medium rounded-md"
               :class="[
                 isActive(subItem.to)
-                  ? 'text-green-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-green-600 bg-green-50'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               ]"
-              @click="$emit('click')"
+              @click="handleSubmenuClick(subItem)"
             >
               {{ subItem.name }}
             </NuxtLink>
@@ -108,7 +111,9 @@ import {
   CogIcon,
   ArrowLeftOnRectangleIcon,
   DocumentChartBarIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ChartBarIcon,
+  ChatBubbleLeftEllipsisIcon
 } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
@@ -119,13 +124,18 @@ const openSubmenus = ref([])
 
 const navigationItems = [
   { name: 'Dashboard', to: '/dashboard', icon: HomeIcon },
-  { name: 'Messages',  to: '/dashboard/messages', icon: ChatBubbleLeftRightIcon,
+  { 
+    name: 'Messages', 
+    to: '/dashboard/messages', 
+    icon: ChatBubbleLeftRightIcon,
     children: [
       { name: 'Single Message', to: '/dashboard/messages/single' },
       { name: 'Bulk Message', to: '/dashboard/messages/bulk' }
     ]
   },
-  { name: 'Reports', to: '/dashboard/report', icon: DocumentChartBarIcon }
+  { name: 'Reports', to: '/dashboard/report', icon: DocumentChartBarIcon },
+  { name: 'User Statistics', to: '/dashboard/stats', icon: ChartBarIcon },
+  { name: 'WA Session', to: '/dashboard/sessions/bind', icon: ChatBubbleLeftEllipsisIcon }
 ]
 
 const profileItems = [
@@ -140,6 +150,11 @@ function isActive(path) {
   return route.path.startsWith(path) && path !== '/dashboard'
 }
 
+function hasActiveChild(item) {
+  if (!item.children) return false
+  return item.children.some(child => isActive(child.to))
+}
+
 function toggleSubmenu(name) {
   const index = openSubmenus.value.indexOf(name)
   if (index === -1) {
@@ -147,6 +162,12 @@ function toggleSubmenu(name) {
   } else {
     openSubmenus.value.splice(index, 1)
   }
+}
+
+function handleSubmenuClick(item) {
+  router.push(item.to)
+  // Emit click event to close mobile sidebar
+  emit('click')
 }
 
 async function handleLogout() {
@@ -157,4 +178,6 @@ async function handleLogout() {
     console.error('Logout error:', error)
   }
 }
+
+const emit = defineEmits(['click'])
 </script>

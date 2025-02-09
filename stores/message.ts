@@ -113,16 +113,25 @@ export const useMessageStore = defineStore('message', {
 
     async sendBulkMessages(formData: FormData) {
       try {
-        const { authApi } = useApi()
+        const authStore = useAuthStore()
         
-        // Debug log untuk cek FormData
-        console.log('FormData content:')
-        for (let [key, value] of formData.entries()) {
+        if (!authStore.token) {
+          throw new Error('Authentication token not found')
+        }
+    
+        // Debug log untuk FormData
+        console.log('FormData entries:')
+        for (const [key, value] of formData.entries()) {
           console.log(`${key}:`, value)
         }
     
-        const response = await authApi('/api/messages/bulk/send', {
+        const response = await $fetch('http://localhost:8000/api/messages/bulk/send', {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authStore.token}`,
+            'Accept': '*/*'
+            // Note: Don't set Content-Type, it will be set automatically for FormData
+          },
           body: formData
         })
     
@@ -130,7 +139,7 @@ export const useMessageStore = defineStore('message', {
     
       } catch (error: any) {
         console.error('Error sending bulk messages:', error)
-        throw error
+        throw new Error(error.response?._data?.error || error.message || 'Failed to send bulk messages')
       }
     },
 

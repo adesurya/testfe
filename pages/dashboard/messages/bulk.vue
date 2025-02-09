@@ -537,7 +537,6 @@ function insertEmoji(emoji) {
 }
 
 // Message sending functions
-// pages/dashboard/messages/bulk.vue
 async function sendBulkMessage() {
   if (!message.value || recipients.value.length === 0) return
 
@@ -546,46 +545,45 @@ async function sendBulkMessage() {
     sending.value = true
     showProgress.value = true
 
-    // Format phoneNumbers dengan benar
+    // Create FormData
     const formData = new FormData()
 
-    // Pastikan format data sesuai yang diharapkan backend
-    const requestData = {
-      userId: authStore.user?.id.toString(),
-      targetNumbers: recipients.value.map(r => r.phone), // Array of phone numbers
-      message: message.value,
-      baseDelay: 20,
-      intervalDelay: 10
-    }
+    // Add each target number individually
+    recipients.value.forEach(recipient => {
+      formData.append('targetNumbers[]', recipient.phone)
+    })
 
-    // Debug log untuk memastikan format data
-    console.log('Request Data:', requestData)
+    // Add message
+    formData.append('message', message.value)
 
-    // Tambahkan data ke FormData
-    formData.append('data', JSON.stringify(requestData))
-
-    // Tambahkan image jika ada
+    // Add image if exists
     if (selectedImage.value) {
       formData.append('image', selectedImage.value)
     }
 
-    // Kirim request
+    // Debug log
+    console.log('Sending bulk message with data:', {
+      targetNumbers: recipients.value.map(r => r.phone),
+      message: message.value,
+      hasImage: !!selectedImage.value
+    })
+
     const response = await messageStore.sendBulkMessages(formData)
 
     if (response.success) {
-      useToast().add({
-        title: 'Success',
-        description: 'Messages are being sent',
-        color: 'green'
-      })
-
-      // Reset form setelah berhasil
+      // Reset form
       message.value = ''
       recipients.value = []
       selectedImage.value = null
       if (fileInput.value) {
         fileInput.value.value = ''
       }
+
+      useToast().add({
+        title: 'Success',
+        description: 'Bulk messages are being sent',
+        color: 'green'
+      })
     } else {
       throw new Error(response.error || 'Failed to send messages')
     }

@@ -95,7 +95,16 @@ export const useUserStore = defineStore('user', {
     async fetchStats() {
       const { authApi } = useApi()
       try {
-        const response = await authApi('/api/user/stats')
+        const response = await authApi('/api/user/stats', {
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+        
+        if (!response.success && !response.data) {
+          throw new Error(response.error || 'Failed to fetch statistics')
+        }
+
         return response.data || response
       } catch (error) {
         console.error('Error fetching user stats:', error)

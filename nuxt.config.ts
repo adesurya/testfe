@@ -47,6 +47,7 @@ export default defineNuxtConfig({
     head: {
       title: 'WhatsApp Dashboard',
       layoutTransition: { name: 'layout', mode: 'out-in' },
+      pageTransition: { name: 'page', mode: 'out-in' },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' }
